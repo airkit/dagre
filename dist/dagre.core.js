@@ -311,6 +311,7 @@ function debugOrdering(g) {
 }
 
 },{"./graphlib":7,"./lodash":10,"./util":29}],7:[function(require,module,exports){
+// eslint-disable-next-line no-redeclare
 /* global window */
 
 var graphlib;
@@ -469,17 +470,18 @@ var Graph = require("./graphlib").Graph;
 
 module.exports = layout;
 
-function layout(g, opts) {
-  var time = opts && opts.debugTiming ? util.time : util.notime;
+function layout(g, inputOpts) {
+  var opts = inputOpts || {}; 
+  var time = opts.debugTiming ? util.time : util.notime;
   time("layout", function() {
     var layoutGraph = 
       time("  buildLayoutGraph", function() { return buildLayoutGraph(g); });
-    time("  runLayout",        function() { runLayout(layoutGraph, time); });
+    time("  runLayout",        function() { runLayout(layoutGraph, time, opts); });
     time("  updateInputGraph", function() { updateInputGraph(g, layoutGraph); });
   });
 }
 
-function runLayout(g, time) {
+function runLayout(g, time, opts) {
   time("    makeSpaceForEdgeLabels", function() { makeSpaceForEdgeLabels(g); });
   time("    removeSelfEdges",        function() { removeSelfEdges(g); });
   time("    acyclic",                function() { acyclic.run(g); });
@@ -494,7 +496,7 @@ function runLayout(g, time) {
   time("    normalize.run",          function() { normalize.run(g); });
   time("    parentDummyChains",      function() { parentDummyChains(g); });
   time("    addBorderSegments",      function() { addBorderSegments(g); });
-  time("    order",                  function() { order(g); });
+  time("    order",                  function() { order(g, opts); });
   time("    insertSelfEdges",        function() { insertSelfEdges(g); });
   time("    adjustCoordinateSystem", function() { coordinateSystem.adjust(g); });
   time("    position",               function() { position(g); });
@@ -844,6 +846,7 @@ function canonicalize(attrs) {
 }
 
 },{"./acyclic":2,"./add-border-segments":3,"./coordinate-system":4,"./graphlib":7,"./lodash":10,"./nesting-graph":11,"./normalize":12,"./order":17,"./parent-dummy-chains":22,"./position":24,"./rank":26,"./util":29}],10:[function(require,module,exports){
+// eslint-disable-next-line no-redeclare
 /* global window */
 
 var lodash;
@@ -1372,8 +1375,9 @@ module.exports = order;
  *
  *    1. Graph nodes will have an "order" attribute based on the results of the
  *       algorithm.
+ * 
  */
-function order(g) {
+function order(g, opts) {
   var maxRank = util.maxRank(g),
     downLayerGraphs = buildLayerGraphs(g, _.range(1, maxRank + 1), "inEdges"),
     upLayerGraphs = buildLayerGraphs(g, _.range(maxRank - 1, -1, -1), "outEdges");
@@ -1384,8 +1388,10 @@ function order(g) {
   var bestCC = Number.POSITIVE_INFINITY,
     best;
 
+  var constraints = opts.constraints || [];
+
   for (var i = 0, lastBest = 0; lastBest < 4; ++i, ++lastBest) {
-    sweepLayerGraphs(i % 2 ? downLayerGraphs : upLayerGraphs, i % 4 >= 2);
+    sweepLayerGraphs(i % 2 ? downLayerGraphs : upLayerGraphs, i % 4 >= 2, constraints);
 
     layering = util.buildLayerMatrix(g);
     var cc = crossCount(g, layering);
@@ -1393,6 +1399,8 @@ function order(g) {
       lastBest = 0;
       best = _.cloneDeep(layering);
       bestCC = cc;
+    } else if (cc === bestCC) {
+      best = _.cloneDeep(layering);
     }
   }
 
@@ -1405,8 +1413,13 @@ function buildLayerGraphs(g, ranks, relationship) {
   });
 }
 
-function sweepLayerGraphs(layerGraphs, biasRight) {
+function sweepLayerGraphs(layerGraphs, biasRight, constraints) {
   var cg = new Graph();
+
+  _.forEach(constraints, function(constraint) {
+    cg.setEdge(constraint.left, constraint.right);
+  });
+
   _.forEach(layerGraphs, function(lg) {
     var root = lg.graph().root;
     var sorted = sortSubgraph(lg, root, cg, biasRight);
@@ -2950,7 +2963,7 @@ function notime(name, fn) {
 }
 
 },{"./graphlib":7,"./lodash":10}],30:[function(require,module,exports){
-module.exports = "0.8.5";
+module.exports = "0.8.6-pre";
 
 },{}]},{},[1])(1)
 });
