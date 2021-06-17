@@ -1,0 +1,26 @@
+version: 0.2
+
+env:
+  variables:
+    ARTIFACTORY_USER: "ci-bot"
+  parameter-store:
+    ARTIFACTORY_TOKEN: "ci_jfrog_password"
+    GITHUB_TOKEN: "git-token"
+    NPM_REGISTRY_TOKEN: "ci_jfrog_npm_token"
+phases:
+  install:
+    commands:
+      - git config --global user.email "bot@ruist.com"
+      - git config --global user.name "Bot Builder"
+      - eval `ssh-agent -s`
+  build:
+    commands:
+      - echo Build started on `date`
+      - ru_build --build-environment CODEBUILD NODE_LIBRARY $BUILD_TYPE
+      - echo Build completed on `date`
+artifacts:
+  files:
+    - '**/*'
+cache:
+  paths:
+    - '/root/.npm/**/*'
