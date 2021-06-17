@@ -1,11 +1,15 @@
 {
-  "name": "dagre",
+  "name": "@ruist/dagre",
   "version": "0.8.6-pre",
   "description": "Graph layout for JavaScript",
   "author": "Chris Pettitt <cpettitt@gmail.com>",
   "contributors": [
     "Matthew Dahl (https://github.com/sandersky)"
   ],
+  "scripts": {
+    "build": "make dist",
+    "clean": "make clean"
+  },
   "license": "MIT",
   "main": "index.js",
   "keywords": [
